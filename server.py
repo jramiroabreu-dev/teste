@@ -12,13 +12,15 @@ CSV_ALL_FILE = Path("reservas_planilha.csv")
 ROOMS = ["1", "2", "3", "4"]
 
 
-def load_reservas():
+def load_reservas(strict=False):
     if not DATA_FILE.exists():
         return []
 
     try:
         return json.loads(DATA_FILE.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
+        if strict:
+            raise
         return []
 
 
@@ -100,6 +102,16 @@ def calendario_por_sala(reservas):
 
 
 class ReservationHandler(BaseHTTPRequestHandler):
+    def _load_reservas_or_error(self, status=503):
+        try:
+            return load_reservas(strict=True)
+        except json.JSONDecodeError:
+            self._json_response(
+                {"erro": "Arquivo de reservas inválido. Corrija reservas.json antes de continuar."},
+                status=status,
+            )
+            return None
+
     def _json_response(self, payload, status=200):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -135,13 +147,17 @@ class ReservationHandler(BaseHTTPRequestHandler):
             return
 
         if self.path == "/reservas":
-            reservas = load_reservas()
+            reservas = self._load_reservas_or_error(status=500)
+            if reservas is None:
+                return
             reservas_ordenadas = sorted(reservas, key=lambda r: (r["data"], r["horario"], r["sala"]))
             self._json_response(reservas_ordenadas)
             return
 
         if self.path == "/calendario":
-            reservas = load_reservas()
+            reservas = self._load_reservas_or_error(status=500)
+            if reservas is None:
+                return
             self._json_response(calendario_por_sala(reservas))
             return
 
@@ -167,7 +183,9 @@ class ReservationHandler(BaseHTTPRequestHandler):
             self._json_response({"disponivel": False, "motivo": "Sala inválida."}, status=400)
             return
 
-        reservas = load_reservas()
+        reservas = self._load_reservas_or_error(status=503)
+        if reservas is None:
+            return
         disponivel, motivo = verificar_disponibilidade(reservas, sala, data, horario)
 
         if self.path == "/verificar":

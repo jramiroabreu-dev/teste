@@ -177,30 +177,34 @@ function renderSala(sala, reservas) {
     const tbody = tabela.querySelector('tbody');
     let total = 0;
 
+    const criarCelula = (valor) => {
+        const celula = document.createElement('td');
+        celula.textContent = String(valor ?? '');
+        return celula;
+    };
+
     if (!reservas || reservas.length === 0) {
         const linha = document.createElement('tr');
-        linha.innerHTML = '<td colspan="4">Sem reservas nesta sala.</td>';
+        const celula = document.createElement('td');
+        celula.colSpan = 4;
+        celula.textContent = 'Sem reservas nesta sala.';
+        linha.appendChild(celula);
         tbody.appendChild(linha);
     } else {
         reservas.forEach((reserva) => {
+            const nomeSeguro = String(reserva?.nome ?? '');
+            const dataSegura = String(reserva?.data ?? '');
+            const horarioSeguro = String(reserva?.horario ?? '');
+            const valorNumero = Number(reserva?.valor);
+            const valorSeguro = Number.isFinite(valorNumero) ? valorNumero.toFixed(2) : '0.00';
+
             const linha = document.createElement('tr');
-            const dataTd = document.createElement('td');
-            dataTd.textContent = reserva.data;
-            linha.appendChild(dataTd);
+            linha.appendChild(criarCelula(dataSegura));
+            linha.appendChild(criarCelula(horarioSeguro));
+            linha.appendChild(criarCelula(nomeSeguro));
+            linha.appendChild(criarCelula(`R$ ${valorSeguro}`));
 
-            const horarioTd = document.createElement('td');
-            horarioTd.textContent = reserva.horario;
-            linha.appendChild(horarioTd);
-
-            const nomeTd = document.createElement('td');
-            nomeTd.textContent = reserva.nome;
-            linha.appendChild(nomeTd);
-
-            const valorTd = document.createElement('td');
-            valorTd.textContent = `R$ ${reserva.valor}`;
-            linha.appendChild(valorTd);
-
-            total += Number(reserva.valor);
+            total += Number(valorSeguro);
             tbody.appendChild(linha);
         });
     }
