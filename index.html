@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reserva de Salas</title>
+    <style>
+        :root {
+            font-family: Arial, sans-serif;
+            color: #1f2937;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f4f6;
+            padding: 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        label {
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        input,
+        select,
+        button {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0.65rem;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #1d4ed8;
+            color: #fff;
+            border: 0;
+            cursor: pointer;
+            min-height: 42px;
+        }
+
+        .ok {
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .erro {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+            font-size: 0.92rem;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            padding: 0.45rem;
+            vertical-align: top;
+        }
+
+        .total {
+            margin-top: 0.5rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <section class="card">
+        <h2>Reservar Sala</h2>
+        <p>Segunda a sábado, das 07:00 às 21:00 (blocos de 1 hora).</p>
+
+        <form id="form" class="form-grid">
+            <label for="nome">Nome
+                <input type="text" id="nome" placeholder="Seu nome" required />
+            </label>
+
+            <label for="sala">Sala
+                <select id="sala" required>
+                    <option value="1">Sala 1</option>
+                    <option value="2">Sala 2</option>
+                    <option value="3">Sala 3</option>
+                    <option value="4">Sala 4</option>
+                </select>
+            </label>
+
+            <label for="data">Data
+                <input type="date" id="data" required />
+            </label>
+
+            <label for="horario">Horário
+                <input type="time" id="horario" min="07:00" max="21:00" step="3600" required />
+            </label>
+
+            <label for="valor">Valor (R$)
+                <input type="number" id="valor" min="0.01" step="0.01" required />
+            </label>
+
+            <button type="submit">Reservar</button>
+        </form>
+
+        <p id="msg"></p>
+    </section>
+
+    <section class="card">
+        <h2>Calendário / Planilha por Sala</h2>
+        <div class="calendario-grid" id="calendario"></div>
+    </section>
+</div>
+
+<script>
+const form = document.getElementById('form');
+const msg = document.getElementById('msg');
+const calendario = document.getElementById('calendario');
+
+function renderSala(sala, reservas) {
+    const box = document.createElement('div');
+    box.className = 'card';
+
+    const titulo = document.createElement('h3');
+    titulo.textContent = `Sala ${sala}`;
+    box.appendChild(titulo);
+
+    const tabela = document.createElement('table');
+    tabela.innerHTML = `
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Hora</th>
+                <th>Nome</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = tabela.querySelector('tbody');
+    let total = 0;
+
+    if (!reservas || reservas.length === 0) {
+        const linha = document.createElement('tr');
+        linha.innerHTML = '<td colspan="4">Sem reservas nesta sala.</td>';
+        tbody.appendChild(linha);
+    } else {
+        reservas.forEach((reserva) => {
+            const linha = document.createElement('tr');
+            linha.innerHTML = `
+                <td>${reserva.data}</td>
+                <td>${reserva.horario}</td>
+                <td>${reserva.nome}</td>
+                <td>R$ ${reserva.valor}</td>
+            `;
+            total += Number(reserva.valor);
+            tbody.appendChild(linha);
+        });
+    }
+
+    box.appendChild(tabela);
+
+    const totalTag = document.createElement('p');
+    totalTag.className = 'total';
+    totalTag.textContent = `Total da sala: R$ ${total.toFixed(2)}`;
+    box.appendChild(totalTag);
+
+    return box;
+}
+
+async function carregarCalendario() {
+    const resposta = await fetch('/calendario');
+    const porSala = await resposta.json();
+
+    calendario.innerHTML = '';
+
+    ['1', '2', '3', '4'].forEach((sala) => {
+        calendario.appendChild(renderSala(sala, porSala[sala] || []));
+    });
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const nome = document.getElementById('nome').value.trim();
+    const sala = document.getElementById('sala').value;
+    const data = document.getElementById('data').value;
+    const horario = document.getElementById('horario').value;
+    const valor = document.getElementById('valor').value;
+
+    const check = await fetch('/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sala, data, horario })
+    });
+
+    const result = await check.json();
+
+    if (!result.disponivel) {
+        msg.className = 'erro';
+        msg.innerText = `❌ ${result.motivo || 'Horário já ocupado!'}`;
+        return;
+    }
+
+    const reserva = await fetch('/reservar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, sala, data, horario, valor })
+    });
+
+    const reservaResultado = await reserva.json();
+
+    if (reserva.ok) {
+        msg.className = 'ok';
+        msg.innerText = '✅ Reserva feita!';
+        form.reset();
+        await carregarCalendario();
+    } else {
+        msg.className = 'erro';
+        msg.innerText = `❌ ${reservaResultado.erro || 'Erro ao reservar.'}`;
+    }
+});
+
+carregarCalendario();
+</script>
+</body>
+</html>

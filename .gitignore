@@ -1,0 +1,4 @@
+__pycache__/
+reservas.json
+reservas_planilha.csv
+sala_*_calendario.csv
