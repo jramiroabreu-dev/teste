@@ -1,3 +1,4 @@
+import csv
 import json
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -6,6 +7,8 @@ from pathlib import Path
 HOST = "0.0.0.0"
 PORT = 8000
 DATA_FILE = Path("reservas.json")
+CSV_ALL_FILE = Path("reservas_planilha.csv")
+ROOMS = ["1", "2", "3", "4"]
 
 
 def load_reservas():
@@ -20,6 +23,25 @@ def load_reservas():
 
 def save_reservas(reservas):
     DATA_FILE.write_text(json.dumps(reservas, ensure_ascii=False, indent=2), encoding="utf-8")
+    exportar_planilhas(reservas)
+
+
+def exportar_csv(path, reservas):
+    with path.open("w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=["nome", "sala", "data", "horario", "valor"])
+        writer.writeheader()
+        for reserva in reservas:
+            writer.writerow(reserva)
+
+
+def exportar_planilhas(reservas):
+    reservas_ordenadas = sorted(reservas, key=lambda r: (r["data"], r["horario"], r["sala"]))
+    exportar_csv(CSV_ALL_FILE, reservas_ordenadas)
+
+    for sala in ROOMS:
+        room_file = Path(f"sala_{sala}_calendario.csv")
+        room_reservas = [r for r in reservas_ordenadas if r["sala"] == sala]
+        exportar_csv(room_file, room_reservas)
 
 
 def validar_data_horario(data, horario):
@@ -42,6 +64,18 @@ def validar_data_horario(data, horario):
     return True, ""
 
 
+def validar_valor(valor):
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return False, "Valor inválido."
+
+    if numero <= 0:
+        return False, "Valor deve ser maior que zero."
+
+    return True, f"{numero:.2f}"
+
+
 def verificar_disponibilidade(reservas, sala, data, horario):
     valido, motivo = validar_data_horario(data, horario)
     if not valido:
@@ -55,6 +89,13 @@ def verificar_disponibilidade(reservas, sala, data, horario):
         return False, "Horário já ocupado para essa sala nesta data."
 
     return True, ""
+
+
+def calendario_por_sala(reservas):
+    organizado = {sala: [] for sala in ROOMS}
+    for reserva in sorted(reservas, key=lambda r: (r["data"], r["horario"])):
+        organizado[reserva["sala"]].append(reserva)
+    return organizado
 
 
 class ReservationHandler(BaseHTTPRequestHandler):
@@ -94,6 +135,11 @@ class ReservationHandler(BaseHTTPRequestHandler):
             self._json_response(reservas_ordenadas)
             return
 
+        if self.path == "/calendario":
+            reservas = load_reservas()
+            self._json_response(calendario_por_sala(reservas))
+            return
+
         self._json_response({"erro": "Rota não encontrada."}, status=404)
 
     def do_POST(self):
@@ -110,8 +156,9 @@ class ReservationHandler(BaseHTTPRequestHandler):
         data = str(payload.get("data", "")).strip()
         horario = str(payload.get("horario", "")).strip()
         nome = str(payload.get("nome", "")).strip()
+        valor = payload.get("valor")
 
-        if sala not in {"1", "2", "3", "4"}:
+        if sala not in set(ROOMS):
             self._json_response({"disponivel": False, "motivo": "Sala inválida."}, status=400)
             return
 
@@ -126,16 +173,24 @@ class ReservationHandler(BaseHTTPRequestHandler):
             self._json_response({"erro": "Nome é obrigatório."}, status=400)
             return
 
+        valor_ok, valor_formatado = validar_valor(valor)
+        if not valor_ok:
+            self._json_response({"erro": valor_formatado}, status=400)
+            return
+
         if not disponivel:
             self._json_response({"erro": motivo}, status=409)
             return
 
-        reservas.append({"nome": nome, "sala": sala, "data": data, "horario": horario})
+        reservas.append(
+            {"nome": nome, "sala": sala, "data": data, "horario": horario, "valor": valor_formatado}
+        )
         save_reservas(reservas)
         self._json_response({"ok": True}, status=201)
 
 
 if __name__ == "__main__":
     print(f"Servidor rodando em http://{HOST}:{PORT}")
+    save_reservas(load_reservas())
     server = HTTPServer((HOST, PORT), ReservationHandler)
     server.serve_forever()
