@@ -1,17 +1,27 @@
 # Reserva de Salas
 
-Aplicação web simples para reservar 4 salas de uso compartilhado.
+Sistema simples de reserva de 4 salas, com front-end em HTML e back-end em Python (sem dependências externas).
 
-## Regras implementadas
+## Regras
 
-- 4 salas disponíveis: Sala 1, Sala 2, Sala 3 e Sala 4.
+- Salas disponíveis: 1, 2, 3 e 4.
 - Reservas apenas de segunda a sábado.
-- Horário permitido entre 07:00 e 21:00 (blocos de 1 hora).
+- Horários permitidos: 07:00 até 21:00.
+- Horários em blocos de 1 hora (minutos `00`).
 - Não permite reservar a mesma sala na mesma data e horário.
 
-## Como usar
+## Como executar
 
-1. Abra o arquivo `index.html` no navegador.
-2. Preencha nome, sala, data e horário.
-3. Clique em **Reservar**.
-4. As reservas ficam salvas no navegador (localStorage).
+```bash
+python3 server.py
+```
+
+Acesse no navegador:
+
+- http://localhost:8000
+
+## Endpoints
+
+- `GET /reservas`: lista todas as reservas.
+- `POST /verificar`: verifica se sala/data/horário está disponível.
+- `POST /reservar`: registra uma nova reserva.

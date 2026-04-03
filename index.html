@@ -1,262 +1,159 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reserva de Salas</title>
     <style>
-      :root {
-        color-scheme: light;
-        font-family: Arial, sans-serif;
-      }
-      body {
-        margin: 0;
-        padding: 2rem;
-        background: #f6f8fb;
-      }
-      .container {
-        max-width: 900px;
-        margin: 0 auto;
-        background: #fff;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 30px rgba(10, 20, 50, 0.1);
-      }
-      h1 {
-        margin-top: 0;
-      }
-      form {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-        align-items: end;
-      }
-      label {
-        display: flex;
-        flex-direction: column;
-        font-size: 0.9rem;
-        gap: 4px;
-      }
-      input,
-      select,
-      button {
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ccd2df;
-        font-size: 1rem;
-      }
-      button {
-        cursor: pointer;
-        background: #2f6feb;
-        color: #fff;
-        border: none;
-      }
-      .message {
-        margin-top: 12px;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        display: none;
-      }
-      .success {
-        display: block;
-        background: #e8f7ec;
-        color: #0f5132;
-      }
-      .error {
-        display: block;
-        background: #fde8e8;
-        color: #842029;
-      }
-      table {
-        margin-top: 20px;
-        width: 100%;
-        border-collapse: collapse;
-      }
-      th,
-      td {
-        border-bottom: 1px solid #e4e7ef;
-        text-align: left;
-        padding: 10px;
-      }
-      .helper {
-        margin-top: 8px;
-        color: #495057;
-        font-size: 0.9rem;
-      }
-      .empty {
-        margin-top: 16px;
-        color: #6c757d;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background: #f5f7fb;
+        }
+
+        .card {
+            max-width: 520px;
+            background: white;
+            padding: 1.25rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin: 0.65rem 0 0.35rem;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.65rem;
+            border-radius: 8px;
+            border: 1px solid #d2d8e6;
+            font-size: 1rem;
+        }
+
+        button {
+            margin-top: 1rem;
+            border: 0;
+            background: #1f6feb;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #msg {
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+
+        ul {
+            margin-top: 0.75rem;
+            padding-left: 1.2rem;
+        }
     </style>
-  </head>
-  <body>
-    <main class="container">
-      <h1>Reserva da Sala de Uso</h1>
-      <p>
-        Horário permitido: segunda a sábado, de 07:00 até 21:00. Não é possível
-        reservar a mesma sala no mesmo horário para a mesma data.
-      </p>
+</head>
+<body>
+<div class="card">
+    <h2>Reservar Sala</h2>
+    <p>Disponível de segunda a sábado, das 07:00 às 21:00.</p>
 
-      <form id="booking-form">
-        <label>
-          Nome
-          <input id="name" type="text" required placeholder="Seu nome" />
-        </label>
+    <form id="form">
+        <label for="nome">Nome</label>
+        <input type="text" id="nome" placeholder="Seu nome" required />
 
-        <label>
-          Sala
-          <select id="room" required>
-            <option value="">Selecione...</option>
-            <option>Sala 1</option>
-            <option>Sala 2</option>
-            <option>Sala 3</option>
-            <option>Sala 4</option>
-          </select>
-        </label>
+        <label for="sala">Sala</label>
+        <select id="sala" required>
+            <option value="1">Sala 1</option>
+            <option value="2">Sala 2</option>
+            <option value="3">Sala 3</option>
+            <option value="4">Sala 4</option>
+        </select>
 
-        <label>
-          Data
-          <input id="date" type="date" required />
-        </label>
+        <label for="data">Data</label>
+        <input type="date" id="data" required />
 
-        <label>
-          Horário
-          <input id="time" type="time" required min="07:00" max="21:00" step="3600" />
-        </label>
+        <label for="horario">Horário</label>
+        <input type="time" id="horario" min="07:00" max="21:00" step="3600" required />
 
         <button type="submit">Reservar</button>
-      </form>
+    </form>
 
-      <p class="helper">* Os horários são exibidos em blocos de 1 hora.</p>
-      <div id="message" class="message" role="status" aria-live="polite"></div>
+    <p id="msg"></p>
+    <h3>Reservas já feitas</h3>
+    <ul id="lista-reservas"></ul>
+</div>
 
-      <h2>Reservas</h2>
-      <div id="empty-state" class="empty">Nenhuma reserva cadastrada ainda.</div>
-      <table id="bookings-table" hidden>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Sala</th>
-            <th>Data</th>
-            <th>Horário</th>
-          </tr>
-        </thead>
-        <tbody id="bookings-body"></tbody>
-      </table>
-    </main>
+<script>
+const form = document.getElementById('form');
+const msg = document.getElementById('msg');
+const lista = document.getElementById('lista-reservas');
 
-    <script>
-      const STORAGE_KEY = "reservas_salas";
-      const form = document.getElementById("booking-form");
-      const nameInput = document.getElementById("name");
-      const roomInput = document.getElementById("room");
-      const dateInput = document.getElementById("date");
-      const timeInput = document.getElementById("time");
-      const messageBox = document.getElementById("message");
-      const table = document.getElementById("bookings-table");
-      const tableBody = document.getElementById("bookings-body");
-      const emptyState = document.getElementById("empty-state");
+async function carregarReservas() {
+    const resposta = await fetch('/reservas');
+    const reservas = await resposta.json();
 
-      const loadBookings = () => {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
-        } catch {
-          return [];
-        }
-      };
+    lista.innerHTML = '';
 
-      const saveBookings = (bookings) => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-      };
+    if (reservas.length === 0) {
+        const item = document.createElement('li');
+        item.textContent = 'Nenhuma reserva cadastrada.';
+        lista.appendChild(item);
+        return;
+    }
 
-      const showMessage = (text, type) => {
-        messageBox.textContent = text;
-        messageBox.className = `message ${type}`;
-      };
+    reservas.forEach((r) => {
+        const item = document.createElement('li');
+        item.textContent = `${r.data} ${r.horario} - Sala ${r.sala} (${r.nome})`;
+        lista.appendChild(item);
+    });
+}
 
-      const isAllowedDate = (isoDate) => {
-        const day = new Date(`${isoDate}T00:00:00`).getDay();
-        return day >= 1 && day <= 6;
-      };
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      const isAllowedTime = (time) => time >= "07:00" && time <= "21:00";
+    const nome = document.getElementById('nome').value.trim();
+    const sala = document.getElementById('sala').value;
+    const data = document.getElementById('data').value;
+    const horario = document.getElementById('horario').value;
 
-      const formatDate = (isoDate) => {
-        const [year, month, day] = isoDate.split("-");
-        return `${day}/${month}/${year}`;
-      };
+    const check = await fetch('/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sala, data, horario })
+    });
 
-      const renderBookings = () => {
-        const bookings = loadBookings().sort((a, b) => {
-          const dateComparison = a.date.localeCompare(b.date);
-          if (dateComparison !== 0) return dateComparison;
-          return a.time.localeCompare(b.time);
-        });
+    const result = await check.json();
 
-        tableBody.innerHTML = "";
+    if (!result.disponivel) {
+        msg.innerText = `❌ ${result.motivo || 'Horário já ocupado!'}`;
+        return;
+    }
 
-        if (bookings.length === 0) {
-          table.hidden = true;
-          emptyState.hidden = false;
-          return;
-        }
+    const reserva = await fetch('/reservar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, sala, data, horario })
+    });
 
-        emptyState.hidden = true;
-        table.hidden = false;
+    const reservaResultado = await reserva.json();
 
-        bookings.forEach((booking) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${booking.name}</td>
-            <td>${booking.room}</td>
-            <td>${formatDate(booking.date)}</td>
-            <td>${booking.time}</td>
-          `;
-          tableBody.appendChild(row);
-        });
-      };
-
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const name = nameInput.value.trim();
-        const room = roomInput.value;
-        const date = dateInput.value;
-        const time = timeInput.value;
-
-        if (!name || !room || !date || !time) {
-          showMessage("Preencha todos os campos obrigatórios.", "error");
-          return;
-        }
-
-        if (!isAllowedDate(date)) {
-          showMessage("A reserva só pode ser feita de segunda a sábado.", "error");
-          return;
-        }
-
-        if (!isAllowedTime(time)) {
-          showMessage("O horário deve estar entre 07:00 e 21:00.", "error");
-          return;
-        }
-
-        const bookings = loadBookings();
-        const conflict = bookings.some(
-          (booking) => booking.room === room && booking.date === date && booking.time === time,
-        );
-
-        if (conflict) {
-          showMessage("Esse horário já está reservado para essa sala.", "error");
-          return;
-        }
-
-        bookings.push({ name, room, date, time });
-        saveBookings(bookings);
-        showMessage("Reserva realizada com sucesso!", "success");
+    if (reserva.ok) {
+        msg.innerText = '✅ Reserva feita!';
         form.reset();
-        renderBookings();
-      });
+        await carregarReservas();
+    } else {
+        msg.innerText = `❌ ${reservaResultado.erro || 'Erro ao reservar.'}`;
+    }
+});
 
-      renderBookings();
-    </script>
-  </body>
+carregarReservas();
+</script>
+</body>
 </html>
