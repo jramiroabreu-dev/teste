@@ -184,12 +184,22 @@ function renderSala(sala, reservas) {
     } else {
         reservas.forEach((reserva) => {
             const linha = document.createElement('tr');
-            linha.innerHTML = `
-                <td>${reserva.data}</td>
-                <td>${reserva.horario}</td>
-                <td>${reserva.nome}</td>
-                <td>R$ ${reserva.valor}</td>
-            `;
+            const dataTd = document.createElement('td');
+            dataTd.textContent = reserva.data;
+            linha.appendChild(dataTd);
+
+            const horarioTd = document.createElement('td');
+            horarioTd.textContent = reserva.horario;
+            linha.appendChild(horarioTd);
+
+            const nomeTd = document.createElement('td');
+            nomeTd.textContent = reserva.nome;
+            linha.appendChild(nomeTd);
+
+            const valorTd = document.createElement('td');
+            valorTd.textContent = `R$ ${reserva.valor}`;
+            linha.appendChild(valorTd);
+
             total += Number(reserva.valor);
             tbody.appendChild(linha);
         });

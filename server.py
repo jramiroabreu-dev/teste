@@ -195,7 +195,21 @@ class ReservationHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    save_reservas(load_reservas())
+    if not DATA_FILE.exists():
+        save_reservas([])
+    else:
+        reservas = load_reservas()
+        if reservas:
+            exportar_planilhas(reservas)
+        else:
+            try:
+                json.loads(DATA_FILE.read_text(encoding="utf-8"))
+                exportar_planilhas([])
+            except json.JSONDecodeError:
+                print(
+                    "Aviso: reservas.json está inválido e não será sobrescrito automaticamente. "
+                    "Corrija o arquivo para recuperar os dados."
+                )
     print(f"Servidor rodando em http://{HOST}:{PORT}")
     server = HTTPServer((HOST, PORT), ReservationHandler)
     server.serve_forever()
